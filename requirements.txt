@@ -3,6 +3,6 @@ tensorflow
 numpy
 requests
 pillow
-opencv-python
+opencv-python-headless
 matplotlib
 seaborn
