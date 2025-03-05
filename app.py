@@ -1,4 +1,6 @@
 import streamlit as st
+import os
+os.system("pip install numpy<2")  # Fuerza NumPy 1.x antes de importar torch
 import torch
 import torch.nn as nn
 import torchvision.models as models
