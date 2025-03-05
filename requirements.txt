@@ -3,7 +3,8 @@ torch==2.2.1
 torchvision
 pillow
 requests
-numpy
+numpy<2  # Evita la incompatibilidad con PyTorch
 matplotlib
 scipy
-tornado<6.3  # Evita problemas con asyncio en Streamlit Cloud
+tornado<6.3
+protobuf==3.20.*
