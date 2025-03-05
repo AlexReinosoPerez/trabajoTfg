@@ -30,7 +30,7 @@ def load_model():
         with open(model_path, 'wb') as f:
             f.write(response.content)
 
-    # 📌 Definir la arquitectura del modelo (igual a la del entrenamiento)
+    # 📌 Definir la arquitectura del modelo (debe coincidir con el entrenamiento)
     model = models.resnet50(weights=None)
     num_features = model.fc.in_features
     model.fc = nn.Sequential(
@@ -38,9 +38,9 @@ def load_model():
         nn.Linear(num_features, len(class_names))
     )
 
-    # 📌 Cargar solo los pesos con `weights_only=True`
+    # 📌 Cargar solo los pesos del modelo
     try:
-        state_dict = torch.load(model_path, map_location=torch.device("cpu"), weights_only=True)
+        state_dict = torch.load(model_path, map_location=torch.device("cpu"))  # Eliminamos `weights_only=True`
         model.load_state_dict(state_dict, strict=False)
     except Exception as e:
         st.error(f"❌ Error al cargar el modelo: {e}")
