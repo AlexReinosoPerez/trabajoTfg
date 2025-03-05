@@ -1,6 +1,9 @@
-torch==2.0.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+torch
 torchvision
 streamlit
 pillow
 requests
-tornado<6.3  # Evita problemas con async en Streamlit
+tornado<6.3
+numpy
+matplotlib
+scipy
