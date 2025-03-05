@@ -2,26 +2,35 @@ import streamlit as st
 import torch
 import torch.nn as nn
 import torchvision.models as models
+import torchvision.transforms as transforms
+from PIL import Image
 import requests
 import os
 
-# Definir las clases del modelo (deben coincidir con las del entrenamiento)
+# 📌 Solución para evitar problemas con asyncio en Streamlit Cloud
+import asyncio
+try:
+    asyncio.set_event_loop(asyncio.new_event_loop())
+except RuntimeError:
+    pass
+
+# 📌 Clases del modelo (deben coincidir con el entrenamiento)
 class_names = ["Impresionismo", "Post-Impresionismo", "Pop Art", "Renacentista"]
 
-# 📌 Función para cargar el modelo de GitHub si no existe
+# 📌 Función para cargar el modelo desde GitHub o localmente
 @st.cache_resource
 def load_model():
     model_path = "best_model.pth"
 
-    # Descargar el modelo desde GitHub si no está en local
+    # 📌 Descargar el modelo desde GitHub si no está en local
     if not os.path.exists(model_path):
-        url = "https://github.com/AlexReinosoPerez/trabajoTfg/bob/main/app.py"
-        st.write("Descargando modelo...")
+        url = "https://raw.githubusercontent.com/TU-USUARIO/TU-REPO/main/best_model.pth"
+        st.write("Descargando modelo desde GitHub...")
         response = requests.get(url)
         with open(model_path, 'wb') as f:
             f.write(response.content)
 
-    # 📌 Definir la arquitectura exacta del modelo (debe coincidir con `train.py`)
+    # 📌 Definir la arquitectura del modelo (igual a la del entrenamiento)
     model = models.resnet50(weights=None)
     num_features = model.fc.in_features
     model.fc = nn.Sequential(
@@ -29,9 +38,9 @@ def load_model():
         nn.Linear(num_features, len(class_names))
     )
 
-    # 📌 Cargar solo el `state_dict`
+    # 📌 Cargar solo los pesos con `weights_only=True`
     try:
-        state_dict = torch.load(model_path, map_location=torch.device("cpu"))
+        state_dict = torch.load(model_path, map_location=torch.device("cpu"), weights_only=True)
         model.load_state_dict(state_dict, strict=False)
     except Exception as e:
         st.error(f"❌ Error al cargar el modelo: {e}")
@@ -42,3 +51,43 @@ def load_model():
 
 # Cargar el modelo
 model = load_model()
+if model is None:
+    st.stop()  # Detener la ejecución si no se cargó el modelo
+
+# 📌 Transformaciones para preprocesar la imagen antes de la predicción
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+
+# 📌 Interfaz de Streamlit
+st.title("🎨 Clasificación de Estilos Artísticos")
+
+uploaded_file = st.file_uploader("📤 Sube una imagen", type=["jpg", "png", "jpeg"])
+image_url = st.text_input("🌐 O introduce una URL de imagen:")
+
+# 📌 Procesar la imagen
+image = None
+if uploaded_file is not None:
+    image = Image.open(uploaded_file)
+    st.image(image, caption="Imagen subida", use_column_width=True)
+
+elif image_url:
+    try:
+        response = requests.get(image_url, timeout=10)
+        image = Image.open(requests.get(image_url, stream=True).raw)
+        st.image(image, caption="Imagen cargada desde URL", use_column_width=True)
+    except Exception as e:
+        st.error("❌ Error al cargar la imagen desde la URL.")
+
+# 📌 Clasificación de la imagen cuando el usuario presione el botón
+if image and st.button("🎯 Clasificar Imagen"):
+    img_tensor = transform(image).unsqueeze(0)  # Convertir imagen en tensor con batch=1
+
+    with torch.no_grad():
+        outputs = model(img_tensor)
+        _, predicted = torch.max(outputs, 1)
+
+    predicted_class = class_names[predicted.item()]
+    st.write(f"### 🎨 Predicción: {predicted_class}")
