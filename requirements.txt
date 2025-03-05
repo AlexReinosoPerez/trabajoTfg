@@ -1,8 +1,10 @@
-streamlit
 tensorflow
 numpy
-requests
-pillow
 opencv-python-headless
 matplotlib
 seaborn
+torch
+torchvision
+streamlit
+pillow
+requests
