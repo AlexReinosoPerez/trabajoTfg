@@ -8,11 +8,11 @@ import requests
 import os
 
 # 📌 Solución para evitar problemas con asyncio en Streamlit Cloud
+# 📌 Solución para problemas de asyncio en Streamlit Cloud
 import asyncio
-try:
-    asyncio.set_event_loop(asyncio.new_event_loop())
-except RuntimeError:
-    pass
+import sys
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 # 📌 Clases del modelo (deben coincidir con el entrenamiento)
 class_names = ["Impresionismo", "Post-Impresionismo", "Pop Art", "Renacentista"]
