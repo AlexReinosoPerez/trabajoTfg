@@ -1,6 +1,4 @@
 import streamlit as st
-import os
-os.system("pip install numpy<2")  # Fuerza NumPy 1.x antes de importar torch
 import torch
 import torch.nn as nn
 import torchvision.models as models
@@ -10,7 +8,6 @@ import requests
 import os
 
 # 📌 Solución para evitar problemas con asyncio en Streamlit Cloud
-# 📌 Solución para problemas de asyncio en Streamlit Cloud
 import asyncio
 import sys
 if sys.platform == "win32":
@@ -40,9 +37,9 @@ def load_model():
         nn.Linear(num_features, len(class_names))
     )
 
-    # 📌 Cargar solo los pesos del modelo
+    # 📌 Cargar el `state_dict` asegurando que el modelo fue guardado correctamente
     try:
-        state_dict = torch.load(model_path, map_location=torch.device("cpu"))  # Eliminamos `weights_only=True`
+        state_dict = torch.load(model_path, map_location=torch.device("cpu"))
         model.load_state_dict(state_dict, strict=False)
     except Exception as e:
         st.error(f"❌ Error al cargar el modelo: {e}")
