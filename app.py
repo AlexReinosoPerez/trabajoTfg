@@ -16,13 +16,11 @@ if sys.platform == "win32":
 # 📌 Clases del modelo (deben coincidir con el entrenamiento)
 class_names = ["Impresionismo", "Post-Impresionismo", "Pop Art", "Renacentista"]
 
-# 📌 Función para descargar y cargar el modelo
 @st.cache_resource
 def load_model():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.join(script_dir, "best_model_quantized.pth")
 
-    # 📌 Descargar el modelo si no está en local desde GitHub
     if not os.path.exists(model_path):
         github_url = "https://raw.githubusercontent.com/TU-USUARIO/TU-REPO/main/best_model_quantized.pth"
         try:
@@ -36,17 +34,24 @@ def load_model():
             st.error(f"⚠️ No se pudo descargar desde GitHub: {e}")
             st.stop()
 
-    # 📌 Cargar el modelo
+    # 📌 Definir la arquitectura del modelo asegurando que coincida con la original
     model = models.resnet50(weights=None)
     num_features = model.fc.in_features
     model.fc = nn.Sequential(
         nn.Dropout(0.5),
-        nn.Linear(num_features, len(class_names))
+        nn.Linear(num_features, 4)  # Asegúrate de que el número de clases es correcto
     )
 
-    state_dict = torch.load(model_path, map_location=torch.device("cpu"))
-    model.load_state_dict(state_dict, strict=False)
-    model.eval()
+    # 📌 Intentar cargar los pesos correctamente
+    try:
+        state_dict = torch.load(model_path, map_location=torch.device("cpu"))
+        model.load_state_dict(state_dict, strict=False)
+        model.eval()
+        st.write("✅ Modelo cargado correctamente.")
+    except Exception as e:
+        st.error(f"❌ Error al cargar el modelo: {e}")
+        st.stop()
+
     return model
 
 # 📌 Cargar el modelo
