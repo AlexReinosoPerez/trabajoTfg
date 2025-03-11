@@ -6,7 +6,6 @@ import torchvision.transforms as transforms
 from PIL import Image
 import requests
 import os
-import gdown  # Para descargar desde Google Drive si es necesario
 
 # 📌 Configuración para evitar problemas con asyncio en Streamlit Cloud
 import asyncio
@@ -23,11 +22,9 @@ def load_model():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.join(script_dir, "best_model_quantized.pth")
 
-    # 📌 Descargar el modelo si no está en local
+    # 📌 Descargar el modelo si no está en local desde GitHub
     if not os.path.exists(model_path):
-        # 🔹 Opción 1: Descargar desde GitHub
-        github_url = "https://raw.githubusercontent.com/AlexReinosoPerez/trabajoTfg/main/best_model_quantized.pth"
-
+        github_url = "https://raw.githubusercontent.com/TU-USUARIO/TU-REPO/main/best_model_quantized.pth"
         try:
             st.write("📥 Descargando modelo desde GitHub...")
             response = requests.get(github_url, stream=True)
@@ -37,16 +34,7 @@ def load_model():
             st.write("✅ Modelo descargado correctamente desde GitHub.")
         except Exception as e:
             st.error(f"⚠️ No se pudo descargar desde GitHub: {e}")
-
-        # 🔹 Opción 2: Descargar desde Google Drive (Si GitHub no permite archivos grandes)
-        if not os.path.exists(model_path):  # Si la descarga desde GitHub falla
-            drive_url = "https://drive.google.com/uc?id=XXXXXXXXXXXXX"  # Reemplaza con tu ID de Google Drive
-            try:
-                st.write("📥 Descargando modelo desde Google Drive...")
-                gdown.download(drive_url, model_path, quiet=False)
-                st.write("✅ Modelo descargado correctamente desde Google Drive.")
-            except Exception as e:
-                st.error(f"⚠️ No se pudo descargar desde Google Drive: {e}")
+            st.stop()
 
     # 📌 Cargar el modelo
     model = models.resnet50(weights=None)
