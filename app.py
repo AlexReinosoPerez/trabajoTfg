@@ -6,6 +6,12 @@ import torchvision.transforms as transforms
 from PIL import Image
 import requests
 import os
+import zipfile
+
+# 📌 Si el modelo no está descomprimido, extraerlo
+if not os.path.exists("best_model.pth"):
+    with zipfile.ZipFile("best_model.zip", 'r') as zip_ref:
+        zip_ref.extractall(".")
 
 # 📌 Solución para evitar problemas con asyncio en Streamlit Cloud
 import asyncio
