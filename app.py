@@ -34,25 +34,27 @@ def load_model():
             st.error(f"⚠️ No se pudo descargar desde GitHub: {e}")
             st.stop()
 
-    # 📌 Definir la arquitectura del modelo asegurando que coincida con la original
+    # 📌 Cargar el modelo cuantizado y convertirlo a float antes de usarlo
+    state_dict = torch.load(model_path, map_location=torch.device("cpu"))
+
+    # 📌 Descuantizar los pesos para evitar el error
+    for key in state_dict.keys():
+        if "weight" in key:
+            state_dict[key] = state_dict[key].dequantize()  # Convierte a float32
+
+    # 📌 Definir la arquitectura correcta
     model = models.resnet50(weights=None)
     num_features = model.fc.in_features
     model.fc = nn.Sequential(
         nn.Dropout(0.5),
-        nn.Linear(num_features, 4)  # Asegúrate de que el número de clases es correcto
+        nn.Linear(num_features, 4)  # Asegurar que el número de clases sea correcto
     )
 
-    # 📌 Intentar cargar los pesos correctamente
-    try:
-        state_dict = torch.load(model_path, map_location=torch.device("cpu"))
-        model.load_state_dict(state_dict, strict=False)
-        model.eval()
-        st.write("✅ Modelo cargado correctamente.")
-    except Exception as e:
-        st.error(f"❌ Error al cargar el modelo: {e}")
-        st.stop()
-
+    # 📌 Cargar los pesos descuantizados
+    model.load_state_dict(state_dict, strict=False)
+    model.eval()
     return model
+
 
 # 📌 Cargar el modelo
 model = load_model()
