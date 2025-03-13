@@ -14,6 +14,9 @@ import sys
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
+# 📌 Mostrar la versión de PyTorch en Streamlit Cloud
+st.write(f"✅ PyTorch versión en Streamlit Cloud: {torch.__version__}")
+
 # 📌 Clases del modelo (deben coincidir con el entrenamiento)
 class_names = ["Impresionismo", "Post-Impresionismo", "Pop Art", "Renacentista"]
 
@@ -24,7 +27,7 @@ DRIVE_FILE_ID = "XXXXXXXXXXXXX"  # Reemplaza con el ID del archivo en Google Dri
 @st.cache_resource
 def load_model():
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.join(script_dir, "best_model_quantized.pth")
+    model_path = os.path.join(script_dir, "best_model.pth")
 
     # 📌 Descargar el modelo si no está en local desde Google Drive
     if not os.path.exists(model_path):
@@ -37,8 +40,12 @@ def load_model():
             st.error(f"⚠️ No se pudo descargar desde Google Drive: {e}")
             st.stop()
 
-    # 📌 Cargar el modelo
-    state_dict = torch.load(model_path, map_location=torch.device("cpu"))
+    # 📌 Cargar el modelo en modo seguro
+    try:
+        state_dict = torch.load(model_path, map_location=torch.device("cpu"), weights_only=True)
+    except Exception as e:
+        st.error(f"❌ Error al cargar `best_model.pth`: {e}")
+        st.stop()
 
     # 📌 Imprimir claves del modelo descargado
     st.write("📂 Parámetros en el modelo descargado:")
