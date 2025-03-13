@@ -6,6 +6,7 @@ import torchvision.transforms as transforms
 from PIL import Image
 import requests
 import os
+import gdown  # Para descargar desde Google Drive
 
 # 📌 Configuración para evitar problemas con asyncio en Streamlit Cloud
 import asyncio
@@ -16,45 +17,38 @@ if sys.platform == "win32":
 # 📌 Clases del modelo (deben coincidir con el entrenamiento)
 class_names = ["Impresionismo", "Post-Impresionismo", "Pop Art", "Renacentista"]
 
+# 📌 ID de Google Drive (reemplázalo con el tuyo)
+DRIVE_FILE_ID = "XXXXXXXXXXXXX"  # Reemplaza con el ID del archivo en Google Drive
+
+# 📌 Función para descargar y cargar el modelo
 @st.cache_resource
 def load_model():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.join(script_dir, "best_model_quantized.pth")
 
+    # 📌 Descargar el modelo si no está en local desde Google Drive
     if not os.path.exists(model_path):
-        github_url = "https://raw.githubusercontent.com/TU-USUARIO/TU-REPO/main/best_model_quantized.pth"
+        drive_url = f"https://drive.google.com/uc?id={DRIVE_FILE_ID}"
         try:
-            st.write("📥 Descargando modelo desde GitHub...")
-            response = requests.get(github_url, stream=True)
-            with open(model_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            st.write("✅ Modelo descargado correctamente desde GitHub.")
+            st.write("📥 Descargando modelo desde Google Drive...")
+            gdown.download(drive_url, model_path, quiet=False)
+            st.write("✅ Modelo descargado correctamente desde Google Drive.")
         except Exception as e:
-            st.error(f"⚠️ No se pudo descargar desde GitHub: {e}")
+            st.error(f"⚠️ No se pudo descargar desde Google Drive: {e}")
             st.stop()
 
-    # 📌 Cargar el modelo cuantizado y convertirlo a float antes de usarlo
-    state_dict = torch.load(model_path, map_location=torch.device("cpu"))
-
-    # 📌 Descuantizar los pesos para evitar el error
-    for key in state_dict.keys():
-        if "weight" in key:
-            state_dict[key] = state_dict[key].dequantize()  # Convierte a float32
-
-    # 📌 Definir la arquitectura correcta
+    # 📌 Cargar el modelo
     model = models.resnet50(weights=None)
     num_features = model.fc.in_features
     model.fc = nn.Sequential(
         nn.Dropout(0.5),
-        nn.Linear(num_features, 4)  # Asegurar que el número de clases sea correcto
+        nn.Linear(num_features, len(class_names))
     )
 
-    # 📌 Cargar los pesos descuantizados
+    state_dict = torch.load(model_path, map_location=torch.device("cpu"))
     model.load_state_dict(state_dict, strict=False)
     model.eval()
     return model
-
 
 # 📌 Cargar el modelo
 model = load_model()
