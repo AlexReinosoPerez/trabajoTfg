@@ -10,6 +10,11 @@ import os
 # 📌 ID del archivo en Google Drive
 DRIVE_FILE_ID = "1py5MYqmlgAvlLXtg39b-Slsdjwim5qdX"
 
+if os.path.exists("best_model.pth"):
+    file_size = os.path.getsize("best_model.pth")
+    print(f"📂 Archivo encontrado: best_model.pth ({file_size} bytes)")
+else:
+    print("❌ Archivo `best_model.pth` no encontrado."
 # 📌 Función para descargar el modelo sin `gdown`
 def download_from_google_drive(drive_id, destination):
     URL = f"https://drive.google.com/uc?export=download&id={drive_id}"
