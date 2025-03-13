@@ -37,7 +37,15 @@ def load_model():
             st.error(f"⚠️ No se pudo descargar desde Google Drive: {e}")
             st.stop()
 
-    # 📌 Cargar el modelo
+    # 📌 Cargar el modelo cuantizado
+    state_dict = torch.load(model_path, map_location=torch.device("cpu"))
+
+    # 📌 Imprimir claves del modelo descargado
+    st.write("📂 Parámetros en el modelo descargado:")
+    for key in state_dict.keys():
+        st.write(key)
+
+    # 📌 Definir la arquitectura correcta
     model = models.resnet50(weights=None)
     num_features = model.fc.in_features
     model.fc = nn.Sequential(
@@ -45,8 +53,15 @@ def load_model():
         nn.Linear(num_features, len(class_names))
     )
 
-    state_dict = torch.load(model_path, map_location=torch.device("cpu"))
-    model.load_state_dict(state_dict, strict=False)
+    # 📌 Intentar cargar los pesos en el modelo permitiendo capas faltantes
+    missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=False)
+
+    # 📌 Mostrar claves no cargadas
+    if missing_keys:
+        st.write("⚠️ Claves no cargadas:", missing_keys)
+    if unexpected_keys:
+        st.write("⚠️ Claves inesperadas en el modelo:", unexpected_keys)
+
     model.eval()
     return model
 
