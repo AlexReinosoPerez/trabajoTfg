@@ -9,4 +9,5 @@ scipy
 tornado<6.3
 protobuf==3.20.*
 gdown
+huggingface_hub
 
