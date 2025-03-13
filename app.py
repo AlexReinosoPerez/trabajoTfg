@@ -21,8 +21,7 @@ st.write(f"✅ PyTorch versión en Streamlit Cloud: {torch.__version__}")
 class_names = ["Impresionismo", "Post-Impresionismo", "Pop Art", "Renacentista"]
 
 # 📌 ID de Google Drive (reemplázalo con el tuyo)
-DRIVE_FILE_ID = "XXXXXXXXXXXXX"  # Reemplaza con el ID del archivo en Google Drive
-
+DRIVE_FILE_ID = "https://drive.google.com/file/d/1py5MYqmlgAvlLXtg39b-Slsdjwim5qdX/view?usp=sharing" 
 # 📌 Función para descargar y cargar el modelo
 @st.cache_resource
 def load_model():
