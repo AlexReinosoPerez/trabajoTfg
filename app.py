@@ -37,7 +37,7 @@ def load_model():
             st.error(f"⚠️ No se pudo descargar desde Google Drive: {e}")
             st.stop()
 
-    # 📌 Cargar el modelo cuantizado
+    # 📌 Cargar el modelo
     state_dict = torch.load(model_path, map_location=torch.device("cpu"))
 
     # 📌 Imprimir claves del modelo descargado
@@ -54,13 +54,18 @@ def load_model():
     )
 
     # 📌 Intentar cargar los pesos en el modelo permitiendo capas faltantes
-    missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=False)
+    try:
+        missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=False)
 
-    # 📌 Mostrar claves no cargadas
-    if missing_keys:
-        st.write("⚠️ Claves no cargadas:", missing_keys)
-    if unexpected_keys:
-        st.write("⚠️ Claves inesperadas en el modelo:", unexpected_keys)
+        # 📌 Mostrar claves no cargadas
+        if missing_keys:
+            st.write("⚠️ Claves no cargadas:", missing_keys)
+        if unexpected_keys:
+            st.write("⚠️ Claves inesperadas en el modelo:", unexpected_keys)
+
+    except Exception as e:
+        st.error(f"❌ Error al cargar los pesos en el modelo: {e}")
+        st.stop()
 
     model.eval()
     return model
