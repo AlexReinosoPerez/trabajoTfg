@@ -1,8 +1,6 @@
 streamlit==1.43.2
-torch==1.13.1
-torchvision==0.14.1
-fastai==2.7.12
-fastcore==1.5.29
+torch==2.3.0
+torchvision==0.18.0
 matplotlib==3.10.1
 numpy==1.26.4
 scipy==1.15.2
