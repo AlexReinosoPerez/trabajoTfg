@@ -1,18 +1,29 @@
-import streamlit as st
 import torch
 import torchvision.models as models
-import torchvision.transforms as transforms
-from PIL import Image
+import requests
+import os
 
-# Cargar el modelo de PyTorch
-@st.cache_resource()
+# URL del archivo en Hugging Face (cambia esto por la URL correcta)
+MODEL_URL = "https://huggingface.co/modelo_pytorch.pth/resolve/main/modelo_pytorch.pth"
+MODEL_PATH = "modelo_pytorch.pth"
+
+# Descargar el modelo si no existe localmente
+if not os.path.exists(MODEL_PATH):
+    print(f"Descargando modelo desde {MODEL_URL}...")
+    response = requests.get(MODEL_URL)
+    with open(MODEL_PATH, "wb") as f:
+        f.write(response.content)
+    print("Modelo descargado correctamente.")
+
+# Cargar el modelo
 def load_model():
-    modelo = models.resnet34(pretrained=False)  # Usa la misma arquitectura que en FastAI
-    modelo.load_state_dict(torch.load("modelo_pytorch.pth", map_location=torch.device("cpu")))
+    modelo = models.resnet34(pretrained=False)  # Usa la arquitectura original del modelo
+    modelo.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu")))
     modelo.eval()
     return modelo
 
 modelo = load_model()
+
 
 # Transformaciones de preprocesamiento
 transform = transforms.Compose([
