@@ -11,18 +11,12 @@ from PIL import Image
 MODEL_URL = "https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/modelo_pytorch.pth"
 MODEL_PATH = "modelo_pytorch.pth"
 
-# 📌 Diccionario de clases con nombres de los estudios
+# 📌 Diccionario de clases con los estilos artísticos deseados
 CLASSES = {
-    0: "Estudio Clásico",
-    1: "Estudio Impresionista",
-    2: "Estudio Cubista",
-    3: "Estudio Surrealista",
-    4: "Estudio Abstracto",
-    5: "Estudio Barroco",
-    6: "Estudio Renacentista",
-    7: "Estudio Romántico",
-    8: "Estudio Gótico",
-    9: "Estudio Expresionista"
+    0: "Impresionismo",
+    1: "Postimpresionismo",
+    2: "Pop Art",
+    3: "Renacimiento"
 }
 
 # 📥 Función para descargar el modelo si no existe
@@ -43,13 +37,13 @@ def load_model():
     # 🏗️ Crear el modelo ResNet50 sin pesos preentrenados
     modelo = models.resnet50(weights=None)
 
-    # 🔗 Modificar la capa fully connected (ajusta el número de clases si es necesario)
+    # 🔗 Modificar la capa fully connected para 4 clases
     num_ftrs = modelo.fc.in_features
-    modelo.fc = nn.Linear(num_ftrs, len(CLASSES))  # Ajustar número de clases según el diccionario
-    
+    modelo.fc = nn.Linear(num_ftrs, len(CLASSES))  # 4 clases
+
     # 📂 Cargar los pesos del modelo de forma segura
     state_dict = torch.load(MODEL_PATH, map_location=torch.device("cpu"))
-    
+
     # 👀 Verificar las claves del modelo (para evitar errores)
     print("Claves en state_dict:", state_dict.keys())
 
@@ -70,7 +64,7 @@ transform = transforms.Compose([
 ])
 
 # 🖼️ Interfaz de Streamlit
-st.title("Clasificación de Imágenes por Estilo Artístico")
+st.title("Clasificación de Estilos Artísticos 🎨")
 st.write("Sube una imagen para obtener la predicción del modelo.")
 
 uploaded_file = st.file_uploader("Elige una imagen...", type=["jpg", "jpeg", "png"])
@@ -86,6 +80,6 @@ if uploaded_file is not None:
     with torch.no_grad():
         output = modelo(image)
         pred_index = torch.argmax(output, dim=1).item()
-        pred_label = CLASSES.get(pred_index, "Estudio Desconocido")  # Obtener nombre del estudio
+        pred_label = CLASSES.get(pred_index, "Estilo Desconocido")  # Obtener nombre del estilo
 
-    st.write(f"**Predicción del modelo:** {pred_label} 🎨")
+    st.write(f"**Predicción del modelo:** {pred_label} 🎭")
