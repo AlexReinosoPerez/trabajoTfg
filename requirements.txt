@@ -12,3 +12,4 @@ gdown
 huggingface_hub
 fastai==2.7.12
 fastcore==1.5.29
+
