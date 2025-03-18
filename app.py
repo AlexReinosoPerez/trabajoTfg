@@ -1,17 +1,17 @@
-import streamlit as st
-from PIL import Image
-from huggingface_hub import hf_hub_download
-from fastai.vision.all import load_learner, PILImage
 import torch
+import pickle
+from fastai.vision.all import load_learner
+from huggingface_hub import hf_hub_download
 
 HF_REPO_ID = "AlexReinoso/trabajoTFM"
 MODEL_FILENAME = "best_model_fastai.pkl"
 
 @st.cache_resource
 def load_model():
-    model_path = hf_hub_download(repo_id=HF_REPO_ID, filename=MODEL_FILENAME)
-    learn = load_learner(model_path)
+    model_path = hf_hub_download(repo_id=HF_REPO_ID, filename=MODEL_FILENAME, force_download=True)
+    learn = load_learner(model_path, pickle_module=pickle)
     return learn
+
 
 learn = load_model()
 
