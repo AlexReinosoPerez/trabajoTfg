@@ -1,55 +1,41 @@
-from pathlib import Path, PosixPath
 import streamlit as st
-import os
 import torch
-import pickle
-from fastai.vision.all import load_learner
-from huggingface_hub import hf_hub_download
+import torchvision.models as models
+import torchvision.transforms as transforms
+from PIL import Image
 
-HF_REPO_ID = "AlexReinoso/trabajoTFM"
-MODEL_FILENAME = "best_model_fastai.pkl"
-
-@st.cache_resource
+# Cargar el modelo de PyTorch
+@st.cache_resource()
 def load_model():
-    os.system("pip install --upgrade fastcore==1.5.29 fastai==2.7.12")  # Asegura compatibilidad
-    model_path = hf_hub_download(repo_id=HF_REPO_ID, filename=MODEL_FILENAME, force_download=True)
+    modelo = models.resnet34(pretrained=False)  # Usa la misma arquitectura que en FastAI
+    modelo.load_state_dict(torch.load("modelo_pytorch.pth", map_location=torch.device("cpu")))
+    modelo.eval()
+    return modelo
 
-    # Convertimos la ruta a string explícitamente para evitar problemas con PosixPath/WindowsPath
-    model_path = str(model_path)
+modelo = load_model()
 
-    # Cargar el modelo sin `strict=False`
-    learn = load_learner(model_path, pickle_module=pickle)
-    learn.path = PosixPath("/")  # Corrige rutas en Linux
-    return learn
+# Transformaciones de preprocesamiento
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
 
-learn = load_model()
+st.title("Clasificación de Obras de Arte")
+st.write("Sube una imagen para clasificarla según su estilo artístico")
 
+uploaded_file = st.file_uploader("Elige una imagen", type=["jpg", "png", "jpeg"])
 
-
-st.title("🎨 Depuración Clasificación Artística (fastai)")
-
-uploaded_file = st.file_uploader("Subir imagen", ["jpg", "png", "jpeg"])
-
-if uploaded_file:
-    image = Image.open(uploaded_file).convert('RGB')
-    st.image(image, caption="Imagen subida", use_column_width=True)
+if uploaded_file is not None:
+    imagen = Image.open(uploaded_file)
+    st.image(imagen, caption="Imagen subida", use_column_width=True)
     
-    image_fastai = PILImage.create(uploaded_file)
-    pred_class, pred_idx, probs = learn.predict(image_fastai)
+    # Preprocesar la imagen
+    imagen = transform(imagen).unsqueeze(0)  # Añadir dimensión de batch
     
-    class_names = learn.dls.vocab
-    
+    # Hacer la predicción
     with torch.no_grad():
-        x = learn.dls.test_dl([image_fastai]).dataset[0][0].unsqueeze(0).to(learn.device)
-        logits = learn.model.eval()(x)
-        
-    st.write("Outputs del modelo (logits):", logits.cpu().numpy())
+        salida = modelo(imagen)
     
-    softmax_probs = torch.softmax(logits, dim=1)[0].cpu()
-    st.write("Probabilidades (calculadas manualmente):",
-             {class_names[i]: f"{p.item()*100:.2f}%" for i, p in enumerate(softmax_probs)})
-    
-    st.write("Probabilidades (vía learn.predict):",
-             {class_names[i]: f"{p*100:.2f}%" for i, p in enumerate(probs)})
-    
-    st.write(f"Clase predicha: {pred_class} con {probs[pred_idx]*100:.2f}% confianza")
+    clase_predicha = torch.argmax(salida, dim=1).item()
+    st.write(f"Predicción: Clase {clase_predicha}")
