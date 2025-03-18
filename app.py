@@ -6,7 +6,7 @@ from huggingface_hub import hf_hub_download
 HF_REPO_ID = "AlexReinoso/trabajoTFM"
 MODEL_FILENAME = "best_model_fastai.pkl"
 
-@st.cache_resource
+@st.cache(allow_output_mutation=True)
 def load_model():
     model_path = hf_hub_download(repo_id=HF_REPO_ID, filename=MODEL_FILENAME, force_download=True)
     learn = load_learner(model_path, pickle_module=pickle)
