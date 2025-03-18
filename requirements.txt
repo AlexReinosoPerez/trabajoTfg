@@ -1,5 +1,5 @@
 streamlit
-torch==2.3.0
+torch==2.0.1
 torchvision
 pillow
 requests
@@ -10,5 +10,6 @@ tornado<6.3
 protobuf==3.20.*
 gdown
 huggingface_hub
-fastai>=2.7.13
-fastcore>=1.5.30
+fastai==2.7.12
+fastcore==1.5.29
+fasttransform
