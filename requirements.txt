@@ -1,6 +1,6 @@
 streamlit==1.43.2
-torch==2.0.0  # Asegura que sea una versión soportada por fastai
-torchvision==0.15.2
+torch==1.13.1  # Compatible con fastai 2.7.12
+torchvision==0.14.1  # Versión compatible con torch 1.13.1
 fastai==2.7.12
 fastcore==1.5.29
 matplotlib==3.10.1
