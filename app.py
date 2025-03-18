@@ -1,8 +1,8 @@
+from pathlib import Path, PosixPath
 import streamlit as st
 import os
 import torch
 import pickle
-from pathlib import PosixPath
 from fastai.vision.all import load_learner
 from huggingface_hub import hf_hub_download
 
@@ -13,11 +13,19 @@ MODEL_FILENAME = "best_model_fastai.pkl"
 def load_model():
     os.system("pip install --upgrade fastcore==1.5.29 fastai==2.7.12")  # Asegura compatibilidad
     model_path = hf_hub_download(repo_id=HF_REPO_ID, filename=MODEL_FILENAME, force_download=True)
-    learn = load_learner(model_path, pickle_module=pickle)
-    learn.path = PosixPath("/")  # Evita errores con rutas de Windows en Linux
+
+    # Convierte la ruta a PosixPath para evitar errores con WindowsPath
+    model_path = Path(model_path)
+    if isinstance(model_path, Path) and not isinstance(model_path, PosixPath):
+        model_path = PosixPath(model_path)
+
+    # Cargar modelo ignorando posibles errores con pickle y rutas
+    learn = load_learner(model_path, pickle_module=pickle, strict=False)
+    learn.path = PosixPath("/")  # Corrige rutas en Linux
     return learn
 
 learn = load_model()
+
 
 st.title("🎨 Depuración Clasificación Artística (fastai)")
 
