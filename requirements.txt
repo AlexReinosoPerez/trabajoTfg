@@ -1,9 +1,9 @@
 streamlit
-torch==2.0.1
+torch==2.0.1+cpu
 torchvision
 pillow
 requests
-numpy<2  # Evita la incompatibilidad con PyTorch
+numpy<2
 matplotlib
 scipy
 tornado<6.3
@@ -12,4 +12,3 @@ gdown
 huggingface_hub
 fastai==2.7.12
 fastcore==1.5.29
-
