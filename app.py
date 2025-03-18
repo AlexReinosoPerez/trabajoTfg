@@ -14,17 +14,16 @@ def load_model():
     os.system("pip install --upgrade fastcore==1.5.29 fastai==2.7.12")  # Asegura compatibilidad
     model_path = hf_hub_download(repo_id=HF_REPO_ID, filename=MODEL_FILENAME, force_download=True)
 
-    # Convierte la ruta a PosixPath para evitar errores con WindowsPath
-    model_path = Path(model_path)
-    if isinstance(model_path, Path) and not isinstance(model_path, PosixPath):
-        model_path = PosixPath(model_path)
+    # Convertimos la ruta a string explícitamente para evitar problemas con PosixPath/WindowsPath
+    model_path = str(model_path)
 
-    # Cargar modelo ignorando posibles errores con pickle y rutas
-    learn = load_learner(model_path, pickle_module=pickle, strict=False)
+    # Cargar el modelo sin `strict=False`
+    learn = load_learner(model_path, pickle_module=pickle)
     learn.path = PosixPath("/")  # Corrige rutas en Linux
     return learn
 
 learn = load_model()
+
 
 
 st.title("🎨 Depuración Clasificación Artística (fastai)")
