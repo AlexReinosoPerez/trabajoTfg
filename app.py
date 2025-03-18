@@ -1,11 +1,11 @@
 import os
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torchvision.transforms as transforms
 import torchvision.models as models
 import streamlit as st
 import requests
+from PIL import Image
 
 # 📌 URL del modelo en Hugging Face
 MODEL_URL = "https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/modelo_pytorch.pth"
@@ -28,14 +28,20 @@ def load_model():
 
     # 🏗️ Crear el modelo ResNet50 sin pesos preentrenados
     modelo = models.resnet50(weights=None)
-    
+
     # 🔗 Modificar la capa fully connected (ajusta el número de clases si es necesario)
     num_ftrs = modelo.fc.in_features
     modelo.fc = nn.Linear(num_ftrs, 10)  # Cambia el 10 por el número correcto de clases
     
     # 📂 Cargar los pesos del modelo de forma segura
-    modelo.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu"), weights_only=True))
+    state_dict = torch.load(MODEL_PATH, map_location=torch.device("cpu"))
     
+    # 👀 Verificar las claves del modelo (ayuda a depuración)
+    print("Claves en state_dict:", state_dict.keys())
+
+    # 🏗️ Cargar los pesos con `strict=False` para evitar errores de compatibilidad
+    modelo.load_state_dict(state_dict, strict=False)
+
     modelo.eval()
     return modelo
 
@@ -56,8 +62,6 @@ st.write("Sube una imagen para obtener la predicción del modelo.")
 uploaded_file = st.file_uploader("Elige una imagen...", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    from PIL import Image
-
     image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption="Imagen subida", use_column_width=True)
 
