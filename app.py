@@ -1,40 +1,38 @@
 import os
-import torch
-import torchvision.models as models
-import streamlit as st
-from torchvision import transforms
-from PIL import Image
 import requests
+import torch
+from torchvision import models
 
-# URL del modelo en Hugging Face
-MODEL_URL = "https://huggingface.co/tu_usuario/tu_repositorio/resolve/main/modelo_pytorch.pth"
+MODEL_URL = "https://huggingface.co/modelo_pytorch.pth/resolve/main/modelo_pytorch.pth"
 MODEL_PATH = "modelo_pytorch.pth"
 
 # Descargar el modelo si no existe localmente
 def download_model():
-    if not os.path.exists(MODEL_PATH):
-        st.write("Descargando el modelo desde Hugging Face...")
+    if not os.path.exists(MODEL_PATH) or os.path.getsize(MODEL_PATH) == 0:
+        print("Descargando el modelo desde Hugging Face...")
         response = requests.get(MODEL_URL, stream=True)
         with open(MODEL_PATH, "wb") as f:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
-        st.write("Modelo descargado exitosamente.")
+        print("Modelo descargado exitosamente.")
 
-@st.cache_resource()
+# Cargar el modelo con Torch
 def load_model():
-    # Descargar el modelo si no está en la carpeta
     download_model()
 
-    # Crear el modelo con la misma arquitectura que usó FastAI
-    modelo = models.resnet34(pretrained=False)
-    modelo.fc = torch.nn.Linear(512, 10)  # Ajusta el número de clases si es diferente
+    # Asegurarse de que el archivo tiene un tamaño correcto antes de cargar
+    if os.path.getsize(MODEL_PATH) < 1000:  # Ajusta este valor si es necesario
+        raise RuntimeError("El archivo del modelo parece estar corrupto o vacío.")
 
-    # Cargar los pesos guardados
-    modelo.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu")))
+    modelo = models.resnet34(pretrained=False)  # Usa la misma arquitectura
+    modelo.fc = torch.nn.Linear(512, 10)  # Ajusta el número de clases
+
+    modelo.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu"), weights_only=True))
     modelo.eval()
     return modelo
 
 modelo = load_model()
+
 
 # Transformaciones de preprocesamiento
 transform = transforms.Compose([
