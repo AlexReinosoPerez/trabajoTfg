@@ -11,3 +11,4 @@ protobuf==3.20.*
 gdown
 huggingface_hub
 fastai
+fastcore==1.5.29  # 👈 Asegura compatibilidad con fastai
