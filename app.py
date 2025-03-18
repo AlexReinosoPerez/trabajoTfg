@@ -27,16 +27,16 @@ def load_model():
 
     # Crear el modelo con la misma arquitectura que usó FastAI
     modelo = models.resnet34(pretrained=False)
-    modelo.fc = torch.nn.Linear(512, 10)  # Ajusta el número de salidas
+    modelo.fc = torch.nn.Linear(512, 10)  # Ajusta el número de clases si es diferente
 
-    # Cargar los pesos guardados en modelo_pytorch.pth
+    # Cargar los pesos guardados
     modelo.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu")))
     modelo.eval()
     return modelo
 
 modelo = load_model()
 
-# Transformaciones de preprocesamiento (iguales a las usadas en el entrenamiento)
+# Transformaciones de preprocesamiento
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
