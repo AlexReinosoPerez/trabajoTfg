@@ -1,18 +1,21 @@
-import streamlit as st 
+import streamlit as st
+import os
 import torch
 import pickle
+from pathlib import PosixPath
 from fastai.vision.all import load_learner
 from huggingface_hub import hf_hub_download
 
 HF_REPO_ID = "AlexReinoso/trabajoTFM"
 MODEL_FILENAME = "best_model_fastai.pkl"
 
-@st.cache(allow_output_mutation=True)
+@st.cache_resource
 def load_model():
+    os.system("pip install --upgrade fastcore==1.5.29 fastai==2.7.12")  # Asegura compatibilidad
     model_path = hf_hub_download(repo_id=HF_REPO_ID, filename=MODEL_FILENAME, force_download=True)
     learn = load_learner(model_path, pickle_module=pickle)
+    learn.path = PosixPath("/")  # Evita errores con rutas de Windows en Linux
     return learn
-
 
 learn = load_model()
 
