@@ -1,48 +1,42 @@
 import streamlit as st
-from fastai.vision.all import *
-import requests
+from fastai.learner import load_learner
 import os
+import requests
 import json
 
-# 📁 Ruta de archivos
-MODEL_URL = "https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/best_model_fastai.pkl"
-CLASSES_URL = "https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/clases.json"
-
+# 📁 Ruta local donde guardar el modelo
 MODEL_PATH = "best_model_fastai.pkl"
-CLASSES_PATH = "clases.json"
+MODEL_URL = "https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/best_model_fastai.pkl"
 
-# 🔽 Descargar modelo si no está
+# 🔁 Descargar modelo si no existe
 if not os.path.exists(MODEL_PATH):
-    with st.spinner("📥 Descargando modelo..."):
+    with st.spinner("📥 Descargando modelo desde Hugging Face..."):
         r = requests.get(MODEL_URL)
         with open(MODEL_PATH, "wb") as f:
             f.write(r.content)
-        st.success("✅ Modelo descargado")
+    st.success("✅ Modelo descargado correctamente")
 
-# 🔽 Descargar clases si no están
-if not os.path.exists(CLASSES_PATH):
-    with st.spinner("📥 Descargando clases..."):
-        r = requests.get(CLASSES_URL)
-        with open(CLASSES_PATH, "w", encoding="utf-8") as f:
-            f.write(r.text)
-        st.success("✅ Clases descargadas")
+# 🔁 Descargar clases si no existen
+if not os.path.exists("clases.json"):
+    r = requests.get("https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/clases.json")
+    with open("clases.json", "w", encoding="utf-8") as f:
+        f.write(r.text)
+    st.success("✅ Clases descargadas")
 
-# 🧠 Cargar modelo
+with open("clases.json", "r", encoding="utf-8") as f:
+    class_names = json.load(f)
+
+# 🧠 Cargar modelo FastAI
 learn = load_learner(MODEL_PATH)
 
-# 🎨 Título
+# 🖼️ Título
 st.title("🎨 Clasificador de Estilos Artísticos")
 
 # 📤 Subir imagen
 uploaded_file = st.file_uploader("Sube una imagen", type=["jpg", "jpeg", "png"])
 
-if uploaded_file:
-    img = PILImage.create(uploaded_file)
-    st.image(img, caption="🖼 Imagen cargada", use_column_width=True)
-
-    # 🔍 Predicción
-    pred_class, pred_idx, probs = learn.predict(img)
-
-    # 📊 Mostrar resultado
-    st.markdown(f"### 🎯 Predicción: `{pred_class}`")
-    st.markdown(f"📈 Confianza: `{probs[pred_idx]:.2%}`")
+if uploaded_file is not None:
+    st.image(uploaded_file, caption="Imagen subida", use_column_width=True)
+    pred, pred_idx, probs = learn.predict(uploaded_file)
+    st.markdown(f"### 🎯 Predicción: `{pred}`")
+    st.markdown(f"Confianza: `{probs[pred_idx]*100:.2f}%`")
