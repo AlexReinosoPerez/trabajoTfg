@@ -1,7 +1,7 @@
 streamlit==1.43.2
-torch==2.5.1
-torchvision==0.20.1
-torchaudio==2.5.1
+torch==2.0.1
+torchvision==0.15.2
+torchaudio==2.0.2
 matplotlib==3.10.1
 numpy==1.26.4
 scipy==1.15.2
@@ -11,6 +11,6 @@ tqdm==4.67.1
 pillow==11.1.0
 requests==2.32.3
 pyyaml==6.0.2
-fastcore==1.5.29
 fastai==2.7.12
+fastcore==1.5.29
 fasttransform==0.1.0
