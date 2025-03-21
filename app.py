@@ -5,7 +5,7 @@ import requests
 from pathlib import Path
 
 # URLs de Hugging Face
-https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/best_model_fastai.pkl
+https:"//huggingface.co/AlexReinoso/trabajoTFM/resolve/main/best_model_fastai.pkl"
 MODEL_PATH = "best_model_fastai.pkl"
 
 
