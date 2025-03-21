@@ -5,26 +5,16 @@ from torchvision import models, transforms
 from PIL import Image
 import requests
 from io import BytesIO
+import os
 
-# 🎯 Clases del modelo
+# 🔗 URL directa al modelo en Hugging Face (cambiado "blob" por "resolve")
+MODEL_URL = "https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/best_model.pth"
+MODEL_PATH = "best_model.pth"
+
+# 🖼️ Clases del modelo
 CLASS_NAMES = ['Impresionismo', 'Pop Art', 'Post-Impresionismo', 'Renacimiento']
 
-# 🧠 Cargar modelo
-@st.cache_resource
-def load_model():
-    model = models.resnet50(weights=None)
-    num_features = model.fc.in_features
-    model.fc = nn.Sequential(
-        nn.Dropout(0.4),
-        nn.Linear(num_features, len(CLASS_NAMES))
-    )
-    model.load_state_dict(torch.load("best_model.pth", map_location=torch.device("cpu")))
-    model.eval()
-    return model
-
-model = load_model()
-
-# 🖼️ Preprocesamiento de imagen
+# 🔄 Transformaciones necesarias para la imagen de entrada
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
@@ -32,29 +22,56 @@ transform = transforms.Compose([
                          std=[0.229, 0.224, 0.225])
 ])
 
-# 🎨 Título de la app
-st.title("🎨 Clasificador de Estilos Artísticos")
-st.write("Sube una imagen de una obra de arte y el modelo te dirá su estilo.")
+@st.cache_resource
+def load_model():
+    # 🧠 Cargar arquitectura ResNet50
+    model = models.resnet50(weights=None)
+    num_features = model.fc.in_features
+    model.fc = nn.Sequential(
+        nn.Dropout(0.4),
+        nn.Linear(num_features, 4)
+    )
+    
+    # ⬇️ Descargar el modelo si no existe
+    if not os.path.exists(MODEL_PATH):
+        with st.spinner("Descargando el modelo desde Hugging Face..."):
+            response = requests.get(MODEL_URL)
+            with open(MODEL_PATH, "wb") as f:
+                f.write(response.content)
+            st.success("✅ Modelo descargado correctamente.")
 
-# 📤 Subir imagen
-uploaded_file = st.file_uploader("📁 Sube una imagen", type=["jpg", "jpeg", "png"])
+    # 📦 Cargar pesos
+    model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
+    model.eval()
+    return model
+
+def predict_image(image, model):
+    image = transform(image).unsqueeze(0)
+    with torch.no_grad():
+        outputs = model(image)
+        probs = torch.softmax(outputs, dim=1)
+        pred_index = torch.argmax(probs, dim=1).item()
+        return CLASS_NAMES[pred_index], probs[0][pred_index].item(), probs[0]
+
+# 🖥️ Interfaz Streamlit
+st.set_page_config(page_title="Clasificador de Estilos Artísticos", layout="centered")
+st.title("🎨 Clasificador de Estilos Artísticos")
+st.markdown("Sube una imagen de un cuadro para predecir su estilo artístico.")
+
+uploaded_file = st.file_uploader("📤 Sube tu imagen aquí", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption="🖼️ Imagen subida", use_column_width=True)
 
-    # 🔍 Inferencia
-    img_tensor = transform(image).unsqueeze(0)  # [1, 3, 224, 224]
-    with torch.no_grad():
-        outputs = model(img_tensor)
-        probabilities = torch.softmax(outputs, dim=1)[0]
-        top_prob, pred_class = torch.max(probabilities, dim=0)
+    model = load_model()
 
-    st.markdown("## 🧠 Predicción")
-    st.write(f"🎯 **Estilo:** {CLASS_NAMES[pred_class.item()]}")
-    st.write(f"📊 **Confianza:** {top_prob.item()*100:.2f}%")
+    st.write("⏳ Clasificando...")
+    label, confidence, probs = predict_image(image, model)
 
-    # 🔢 Mostrar todas las probabilidades
-    st.markdown("### 📈 Distribución de predicciones")
-    for idx, prob in enumerate(probabilities):
-        st.write(f"{CLASS_NAMES[idx]}: {prob.item()*100:.2f}%")
+    st.success(f"🎯 Predicción: **{label}** con una confianza de **{confidence * 100:.2f}%**")
+
+    # 📊 Mostrar todas las probabilidades
+    st.subheader("Distribución de Probabilidades:")
+    for i, class_name in enumerate(CLASS_NAMES):
+        st.write(f"**{class_name}:** {probs[i].item() * 100:.2f}%")
