@@ -6,7 +6,8 @@ from pathlib import Path
 
 # URLs de Hugging Face
 MODEL_URL = "https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/best_model_fastai.pkl"
-CLASSES_URL = "https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/clases.json"
+MODEL_PATH = "best_model_fastai.pkl"
+
 
 # Rutas locales temporales
 MODEL_PATH = Path("best_model_fastai.pkl")
