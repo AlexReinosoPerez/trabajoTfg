@@ -1,42 +1,48 @@
 import streamlit as st
-from fastai.learner import load_learner
-import os
+from fastai.vision.all import *
 import requests
 import json
+from pathlib import Path
 
-# 📁 Ruta local donde guardar el modelo
-MODEL_PATH = "best_model_fastai.pkl"
+# URLs
+CLASSES_URL = "https://raw.githubusercontent.com/AlexReinosoPerez/trabajoTfg/main/clases.json"
 MODEL_URL = "https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/best_model_fastai.pkl"
+MODEL_PATH = Path("best_model_fastai.pkl")
+CLASSES_PATH = Path("clases.json")
 
-# 🔁 Descargar modelo si no existe
-if not os.path.exists(MODEL_PATH):
-    with st.spinner("📥 Descargando modelo desde Hugging Face..."):
-        r = requests.get(MODEL_URL)
-        with open(MODEL_PATH, "wb") as f:
-            f.write(r.content)
-    st.success("✅ Modelo descargado correctamente")
+# Descargar clases.json si no existe
+if not CLASSES_PATH.exists():
+    response = requests.get(CLASSES_URL)
+    with open(CLASSES_PATH, "w", encoding="utf-8") as f:
+        f.write(response.text)
+    st.success("✅ clases.json descargado correctamente")
 
-# 🔁 Descargar clases si no existen
-if not os.path.exists("clases.json"):
-    r = requests.get("https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/clases.json")
-    with open("clases.json", "w", encoding="utf-8") as f:
-        f.write(r.text)
-    st.success("✅ Clases descargadas")
-
-with open("clases.json", "r", encoding="utf-8") as f:
+# Cargar clases
+with open(CLASSES_PATH, "r", encoding="utf-8") as f:
     class_names = json.load(f)
 
-# 🧠 Cargar modelo FastAI
+# Descargar modelo si no existe
+if not MODEL_PATH.exists():
+    response = requests.get(MODEL_URL, headers={"User-Agent": "Mozilla/5.0"})
+    with open(MODEL_PATH, "wb") as f:
+        f.write(response.content)
+    st.success("✅ Modelo descargado correctamente")
+
+# Cargar modelo FastAI
 learn = load_learner(MODEL_PATH)
 
-# 🖼️ Título
+# Interfaz Streamlit
 st.title("🎨 Clasificador de Estilos Artísticos")
 
-# 📤 Subir imagen
 uploaded_file = st.file_uploader("Sube una imagen", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    st.image(uploaded_file, caption="Imagen subida", use_column_width=True)
-    pred, pred_idx, probs = learn.predict(uploaded_file)
-    st.markdown(f"### 🎯 Predicción: `{pred}`")
-    st.markdown(f"Confianza: `{probs[pred_idx]*100:.2f}%`")
+    img = PILImage.create(uploaded_file)
+    st.image(img, caption="Imagen subida", use_column_width=True)
+
+    if st.button("Clasificar"):
+        pred, pred_idx, probs = learn.predict(img)
+        st.markdown(f"### 🎯 Predicción: `{pred}`")
+        st.write("Probabilidades:")
+        for c, p in zip(class_names, probs):
+            st.write(f"- {c}: {p:.4f}")
