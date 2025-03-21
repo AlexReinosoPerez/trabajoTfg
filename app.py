@@ -1,48 +1,60 @@
 import streamlit as st
-from fastai.vision.all import *
+import torch
+import torch.nn as nn
+from torchvision import models, transforms
+from PIL import Image
 import requests
-import json
-from pathlib import Path
+from io import BytesIO
 
-# URLs
-CLASSES_URL = "https://raw.githubusercontent.com/AlexReinosoPerez/trabajoTfg/main/clases.json"
-MODEL_URL = "https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/best_model_fastai.pkl"
-MODEL_PATH = Path("best_model_fastai.pkl")
-CLASSES_PATH = Path("clases.json")
+# 🎯 Clases del modelo
+CLASS_NAMES = ['Impresionismo', 'Pop Art', 'Post-Impresionismo', 'Renacimiento']
 
-# Descargar clases.json si no existe
-if not CLASSES_PATH.exists():
-    response = requests.get(CLASSES_URL)
-    with open(CLASSES_PATH, "w", encoding="utf-8") as f:
-        f.write(response.text)
-    st.success("✅ clases.json descargado correctamente")
+# 🧠 Cargar modelo
+@st.cache_resource
+def load_model():
+    model = models.resnet50(weights=None)
+    num_features = model.fc.in_features
+    model.fc = nn.Sequential(
+        nn.Dropout(0.4),
+        nn.Linear(num_features, len(CLASS_NAMES))
+    )
+    model.load_state_dict(torch.load("best_model.pth", map_location=torch.device("cpu")))
+    model.eval()
+    return model
 
-# Cargar clases
-with open(CLASSES_PATH, "r", encoding="utf-8") as f:
-    class_names = json.load(f)
+model = load_model()
 
-# Descargar modelo si no existe
-if not MODEL_PATH.exists():
-    response = requests.get(MODEL_URL, headers={"User-Agent": "Mozilla/5.0"})
-    with open(MODEL_PATH, "wb") as f:
-        f.write(response.content)
-    st.success("✅ Modelo descargado correctamente")
+# 🖼️ Preprocesamiento de imagen
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                         std=[0.229, 0.224, 0.225])
+])
 
-# Cargar modelo FastAI
-learn = load_learner(MODEL_PATH)
-
-# Interfaz Streamlit
+# 🎨 Título de la app
 st.title("🎨 Clasificador de Estilos Artísticos")
+st.write("Sube una imagen de una obra de arte y el modelo te dirá su estilo.")
 
-uploaded_file = st.file_uploader("Sube una imagen", type=["jpg", "jpeg", "png"])
+# 📤 Subir imagen
+uploaded_file = st.file_uploader("📁 Sube una imagen", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    img = PILImage.create(uploaded_file)
-    st.image(img, caption="Imagen subida", use_column_width=True)
+    image = Image.open(uploaded_file).convert("RGB")
+    st.image(image, caption="🖼️ Imagen subida", use_column_width=True)
 
-    if st.button("Clasificar"):
-        pred, pred_idx, probs = learn.predict(img)
-        st.markdown(f"### 🎯 Predicción: `{pred}`")
-        st.write("Probabilidades:")
-        for c, p in zip(class_names, probs):
-            st.write(f"- {c}: {p:.4f}")
+    # 🔍 Inferencia
+    img_tensor = transform(image).unsqueeze(0)  # [1, 3, 224, 224]
+    with torch.no_grad():
+        outputs = model(img_tensor)
+        probabilities = torch.softmax(outputs, dim=1)[0]
+        top_prob, pred_class = torch.max(probabilities, dim=0)
+
+    st.markdown("## 🧠 Predicción")
+    st.write(f"🎯 **Estilo:** {CLASS_NAMES[pred_class.item()]}")
+    st.write(f"📊 **Confianza:** {top_prob.item()*100:.2f}%")
+
+    # 🔢 Mostrar todas las probabilidades
+    st.markdown("### 📈 Distribución de predicciones")
+    for idx, prob in enumerate(probabilities):
+        st.write(f"{CLASS_NAMES[idx]}: {prob.item()*100:.2f}%")
