@@ -1,33 +1,43 @@
 import streamlit as st
-from fastai.vision.all import load_learner, PILImage
+from fastai.vision.all import *
 import json
+import requests
+from pathlib import Path
 
-# 📁 Cargar las clases
-with open("clases.json", "r") as f:
+# URLs de Hugging Face
+MODEL_URL = "https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/best_model_fastai.pkl"
+CLASSES_URL = "https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/clases.json"
+
+# Rutas locales temporales
+MODEL_PATH = Path("best_model_fastai.pkl")
+CLASSES_PATH = Path("clases.json")
+
+# Descargar archivos si no existen
+if not MODEL_PATH.exists():
+    with open(MODEL_PATH, "wb") as f:
+        f.write(requests.get(MODEL_URL).content)
+
+if not CLASSES_PATH.exists():
+    with open(CLASSES_PATH, "w", encoding="utf-8") as f:
+        f.write(requests.get(CLASSES_URL).text)
+
+# Cargar etiquetas
+with open(CLASSES_PATH) as f:
     class_names = json.load(f)
 
-# 🧠 Cargar el modelo entrenado en FastAI
-learn = load_learner("best_model_fastai.pkl")
+# Cargar el modelo entrenado en FastAI
+learn = load_learner(MODEL_PATH)
 
-# 🎨 Título de la app
+# Interfaz Streamlit
 st.title("🎨 Clasificador de Estilos Artísticos")
+st.markdown("Sube una imagen de una obra de arte y el modelo predecirá su estilo.")
 
-# 📤 Subida de imagen
-uploaded_file = st.file_uploader("Sube una imagen para clasificar", type=["jpg", "jpeg", "png"])
+uploaded_file = st.file_uploader("Sube tu imagen", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    # Mostrar imagen
-    st.image(uploaded_file, caption="Imagen subida", use_column_width=True)
-
-    # Convertir a formato PIL
     img = PILImage.create(uploaded_file)
+    st.image(img, caption="Imagen subida", use_column_width=True)
 
-    # Predicción
-    pred_class, pred_idx, probs = learn.predict(img)
-
-    # Mostrar resultados
-    st.markdown("### 🧠 Predicción:")
-    st.write(f"**{pred_class}**")
-    st.markdown("### 🔢 Probabilidades:")
-    for i, p in enumerate(probs):
-        st.write(f"{class_names[i]}: {p:.4f}")
+    with st.spinner("Clasificando..."):
+        pred_class, pred_idx, outputs = learn.predict(img)
+        st.success(f"Predicción: **{pred_class}**")
