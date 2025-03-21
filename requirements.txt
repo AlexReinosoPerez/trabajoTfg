@@ -11,5 +11,5 @@ tqdm==4.67.1
 pillow==11.1.0
 requests==2.32.3
 pyyaml==6.0.2
-fastai
-Pillow
+fastcore==1.5.27
+fastai==2.7.12
