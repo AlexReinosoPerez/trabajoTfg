@@ -18,24 +18,40 @@ transform = transforms.Compose([
 ])
 
 @st.cache_resource
+@st.cache_resource
 def load_model():
+    from huggingface_hub import hf_hub_download
+
     repo_id = "AlexReinoso/trabajoTFM"
     filename = "best_model.pth"
 
     try:
+        st.write("🔄 Descargando el modelo desde Hugging Face...")
         model_path = hf_hub_download(repo_id=repo_id, filename=filename)
-        st.success("✅ Modelo descargado correctamente desde Hugging Face.")
+        st.success(f"✅ Modelo descargado correctamente: `{model_path}`")
     except Exception as e:
+        st.error("❌ No se pudo descargar el modelo desde Hugging Face.")
+        st.exception(e)
         raise Exception(f"❌ Error al descargar el modelo desde Hugging Face: {e}")
 
+    # 🧠 Cargar arquitectura
     model = models.resnet50(weights=None)
     num_features = model.fc.in_features
     model.fc = nn.Sequential(
         nn.Dropout(0.4),
         nn.Linear(num_features, len(CLASS_NAMES))
     )
-    model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
-    model.eval()
+
+    try:
+        st.write("📦 Cargando pesos en el modelo...")
+        model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
+        model.eval()
+        st.success("✅ Modelo cargado y listo.")
+    except Exception as e:
+        st.error("❌ Error al cargar los pesos del modelo.")
+        st.exception(e)
+        raise e
+
     return model
 
 def predict_image(image, model):
