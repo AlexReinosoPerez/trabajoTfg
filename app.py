@@ -3,14 +3,8 @@ import torch
 import torch.nn as nn
 from torchvision import models, transforms
 from PIL import Image
-import requests
-from io import BytesIO
-import os
 from huggingface_hub import hf_hub_download
-
-# 🔗 URL directa al modelo en Hugging Face (cambiado "blob" por "resolve")
-MODEL_URL = "https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/best_model.pth"
-MODEL_PATH = "best_model.pth"
+import os
 
 # 🖼️ Clases del modelo
 CLASS_NAMES = ['Impresionismo', 'Pop Art', 'Post-Impresionismo', 'Renacimiento']
@@ -24,27 +18,23 @@ transform = transforms.Compose([
 ])
 
 @st.cache_resource
-from huggingface_hub import hf_hub_download
-
-@st.cache_resource
 def load_model():
     repo_id = "AlexReinoso/trabajoTFM"
     filename = "best_model.pth"
 
     try:
-        MODEL_PATH = hf_hub_download(repo_id=repo_id, filename=filename)
+        model_path = hf_hub_download(repo_id=repo_id, filename=filename)
         st.success("✅ Modelo descargado correctamente desde Hugging Face.")
     except Exception as e:
         raise Exception(f"❌ Error al descargar el modelo desde Hugging Face: {e}")
 
-    # Load architecture
     model = models.resnet50(weights=None)
     num_features = model.fc.in_features
     model.fc = nn.Sequential(
         nn.Dropout(0.4),
         nn.Linear(num_features, len(CLASS_NAMES))
     )
-    model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
+    model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
     model.eval()
     return model
 
