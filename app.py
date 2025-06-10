@@ -6,6 +6,7 @@ from PIL import Image
 import requests
 from io import BytesIO
 import os
+from huggingface_hub import hf_hub_download
 
 # 🔗 URL directa al modelo en Hugging Face (cambiado "blob" por "resolve")
 MODEL_URL = "https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/best_model.pth"
@@ -23,34 +24,30 @@ transform = transforms.Compose([
 ])
 
 @st.cache_resource
+from huggingface_hub import hf_hub_download
+
+@st.cache_resource
 def load_model():
-    MODEL_URL = "https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/best_model.pth"
-    MODEL_PATH = "best_model.pth"
+    repo_id = "AlexReinoso/trabajoTFM"
+    filename = "best_model.pth"
 
-    if not os.path.exists(MODEL_PATH):
-        print("⬇️ Descargando modelo desde Hugging Face...")
-        response = requests.get(MODEL_URL)
-        if response.status_code == 200:
-            with open(MODEL_PATH, 'wb') as f:
-                f.write(response.content)
-            print("✅ Modelo descargado correctamente.")
-        else:
-            raise Exception(f"❌ Error al descargar el modelo: código {response.status_code}")
+    try:
+        MODEL_PATH = hf_hub_download(repo_id=repo_id, filename=filename)
+        st.success("✅ Modelo descargado correctamente desde Hugging Face.")
+    except Exception as e:
+        raise Exception(f"❌ Error al descargar el modelo desde Hugging Face: {e}")
 
-    # 🧠 Cargar la arquitectura y pesos del modelo
-    from torchvision import models
-    import torch.nn as nn
-
+    # Load architecture
     model = models.resnet50(weights=None)
     num_features = model.fc.in_features
     model.fc = nn.Sequential(
         nn.Dropout(0.4),
-        nn.Linear(num_features, 4)  # Cambiar si tus clases han cambiado
+        nn.Linear(num_features, len(CLASS_NAMES))
     )
-
     model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
     model.eval()
     return model
+
 def predict_image(image, model):
     image = transform(image).unsqueeze(0)
     with torch.no_grad():
