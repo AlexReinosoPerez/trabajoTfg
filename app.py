@@ -18,11 +18,11 @@ transform = transforms.Compose([
 ])
 
 @st.cache_resource
-@st.cache_resource
 def load_model():
     from huggingface_hub import hf_hub_download
 
-    repo_id = "AlexReinoso/trabajoTFM"
+    # ⚠️ Corrección aquí
+    repo_id = "AlexReinoso/trabajoTFG"
     filename = "best_model.pth"
 
     try:
