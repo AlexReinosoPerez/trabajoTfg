@@ -24,27 +24,33 @@ transform = transforms.Compose([
 
 @st.cache_resource
 def load_model():
-    # 🧠 Cargar arquitectura ResNet50
+    MODEL_URL = "https://huggingface.co/AlexReinoso/trabajoTFM/resolve/main/best_model.pth"
+    MODEL_PATH = "best_model.pth"
+
+    if not os.path.exists(MODEL_PATH):
+        print("⬇️ Descargando modelo desde Hugging Face...")
+        response = requests.get(MODEL_URL)
+        if response.status_code == 200:
+            with open(MODEL_PATH, 'wb') as f:
+                f.write(response.content)
+            print("✅ Modelo descargado correctamente.")
+        else:
+            raise Exception(f"❌ Error al descargar el modelo: código {response.status_code}")
+
+    # 🧠 Cargar la arquitectura y pesos del modelo
+    from torchvision import models
+    import torch.nn as nn
+
     model = models.resnet50(weights=None)
     num_features = model.fc.in_features
     model.fc = nn.Sequential(
         nn.Dropout(0.4),
-        nn.Linear(num_features, 4)
+        nn.Linear(num_features, 4)  # Cambiar si tus clases han cambiado
     )
-    
-    # ⬇️ Descargar el modelo si no existe
-    if not os.path.exists(MODEL_PATH):
-        with st.spinner("Descargando el modelo desde Hugging Face..."):
-            response = requests.get(MODEL_URL)
-            with open(MODEL_PATH, "wb") as f:
-                f.write(response.content)
-            st.success("✅ Modelo descargado correctamente.")
 
-    # 📦 Cargar pesos
     model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
     model.eval()
     return model
-
 def predict_image(image, model):
     image = transform(image).unsqueeze(0)
     with torch.no_grad():
